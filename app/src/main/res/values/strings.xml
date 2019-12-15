@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">usbka Client</string>
+    <string name="app_name_desc">Ujian Sekolah Berbasis Komputer</string>
+    <string name="url_server">http://10.5.50.7/kopasprojects/ujian/auth</string>
+    <string name="title_activity_masuk">MasukActivity</string>
+</resources>

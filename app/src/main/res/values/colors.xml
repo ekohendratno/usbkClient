@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3c4b59</color>
+    <color name="colorPrimaryDark">#3c4b59</color>
+    <color name="colorAccent">#fff44336</color>
+
+    <color name="colorAlfa">#fff44336</color>
+    <color name="colorHeaderBg">#fff7f7f7</color>
+    <color name="colorIzin">#ffffb300</color>
+    <color name="colorMasuk">#ff009688</color>
+    <color name="colorSakit">#ff43a047</color>
+    <color name="colorTerlambat">#673AB7</color>
+    <color name="colorSelectedKelas">#ffe3f2fd</color>
+    <color name="colorShowcaseBg">#95000000</color>
+    <color name="colorTextPrimary">#de000000</color>
+    <color name="colorTextSecondary">#8a000000</color>
+    <color name="colorTextThird">#ff5f5f5f</color>
+    <color name="colorToolbar">#fffbfbfb</color>
+
+    <color name="colorStatusBack">#ff9f9f9f</color>
+    <color name="colorWindowBackground">#ffebebeb</color>
+</resources>
