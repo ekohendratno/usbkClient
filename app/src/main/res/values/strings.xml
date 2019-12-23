@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">usbka Client</string>
     <string name="app_name_desc">Ujian Sekolah Berbasis Komputer</string>
-    <string name="url_server">http://10.5.50.7/kopasprojects/ujian/auth</string>
+    <string name="url_server">https://usbk.kopas.id/auth/client</string>
     <string name="title_activity_masuk">MasukActivity</string>
+    <string name="chrome">https://play.google.com/store/apps/details?id=com.android.chrome</string>
+    <string name="webview">https://play.google.com/store/apps/details?id=com.google.android.webview</string>
 </resources>

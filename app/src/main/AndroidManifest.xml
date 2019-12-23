@@ -2,9 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="id.kopas.berkarya.usbkclient">
 
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:allowBackup="true"
@@ -28,6 +29,9 @@
         <activity
             android:name=".MainActivity"
             android:theme="@style/AppTheme.NoActionBarStatusBar" />
+        <meta-data android:name="android.s192upport.VERSION" android:value="26.1.0" />
+        <meta-data android:name="android.arch.lifecycle.VERSION" android:value="27.0.0-SNAPSHOT" />
+        <meta-data android:name="com.android.vending.derived.apk.id" android:value="1" />
     </application>
 
 </manifest>

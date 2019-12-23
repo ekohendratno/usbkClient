@@ -11,9 +11,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.format.Time;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
@@ -22,6 +25,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.util.Timer;
@@ -31,11 +35,13 @@ import static id.kopas.berkarya.usbkclient.DetectConnection.isNetworkStatusAvial
 
 public class MainActivity extends AppCompatActivity {
 
+    private static int PAGE_LOAD_PROGRESS = 0;
+    private ConnectionTimeoutHandler timeoutHandler = null;
+    private ProgressBar progressBar;
+
     MyTimerTask myTimerTask;
     Timer timer;
     private SwipeRefreshLayout swipeRefreshLayout;
-    WebView view;
-    String s;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,7 +49,9 @@ public class MainActivity extends AppCompatActivity {
 
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         String s = getResources().getString(R.string.url_server);
-        view = findViewById(R.id.view);
+
+        final WebView view = findViewById(R.id.view);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
 
 
         Intent i = getIntent();
@@ -60,9 +68,10 @@ public class MainActivity extends AppCompatActivity {
         //view.getSettings().setDisplayZoomControls(false);
 
         view.getSettings().setLoadsImagesAutomatically(true);
-        //view.clearCache();
+        //view.clearCache(true);
         view.setWebViewClient(new ExamWebView());
-        view.setWebChromeClient(new WebChromeClient());
+        view.setWebChromeClient(new MyWebChromeClient(this));
+        //view.setWebChromeClient(new WebChromeClient());
 
         view.loadUrl(s);
         swipeRefreshLayout = findViewById(R.id.swipe);
@@ -76,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(MainActivity.this, "Url tidak valid/offline", Toast.LENGTH_LONG).show();
                     view.loadDataWithBaseURL(null, "<html><body><img width=\"100%\" height=\"100%\" src=\"file:///android_res/drawable/offline.png\"></body></html>", "text/html", "UTF-8", null);
-                    progressDialogModel.hideProgressDialog();
+                    //progressDialogModel.hideProgressDialog();
                     swipeRefreshLayout.setRefreshing(false);
                     Intent i = new Intent(getBaseContext(), MasukActivity.class);
                     startActivity(i);
@@ -99,15 +108,22 @@ public class MainActivity extends AppCompatActivity {
 
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
+
+
+            timeoutHandler = new ConnectionTimeoutHandler(MainActivity.this, view);
+            timeoutHandler.execute();
+
+            progressBar.setVisibility(View.VISIBLE);
         }
 
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             if(isNetworkStatusAvialable (MainActivity.this)) {
                 view.loadUrl(url);
-                progressDialogModel.pdMenyiapkanDataLogin(MainActivity.this);
+                //progressDialogModel.pdMenyiapkanDataLogin(MainActivity.this);
             } else {
                 Toast.makeText(MainActivity.this, "Url tidak valid/offline", Toast.LENGTH_LONG).show();
-                view.loadDataWithBaseURL(null, "<html><body><img width=\"100%\" height=\"100%\" src=\"file:///android_res/drawable/offline.png\"></body></html>", "text/html", "UTF-8", null);progressDialogModel.hideProgressDialog();
+                view.loadDataWithBaseURL(null, "<html><body><img width=\"100%\" height=\"100%\" src=\"file:///android_res/drawable/offline.png\"></body></html>", "text/html", "UTF-8", null);
+                //progressDialogModel.hideProgressDialog();
                 swipeRefreshLayout.setRefreshing(false);
                 Intent i = new Intent(getBaseContext(), MasukActivity.class);
                 startActivity(i);
@@ -117,17 +133,161 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void onPageFinished(WebView view, String url) {
-            progressDialogModel.hideProgressDialog();
+            //progressDialogModel.hideProgressDialog();
             swipeRefreshLayout.setRefreshing(false);
+            if (timeoutHandler != null)
+                timeoutHandler.cancel(true);
+
+            progressBar.setVisibility(View.GONE);
+
             super.onPageFinished(view, url);
         }
 
         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
             swipeRefreshLayout.setRefreshing(false);
+            progressBar.setVisibility(View.GONE);
+
             Intent i = new Intent(getBaseContext(), MasukActivity.class);
             i.putExtra("valid", "offline");
             startActivity(i);
             System.exit(0);
+        }
+    }
+
+    private class MyWebChromeClient extends WebChromeClient {
+        Context context;
+
+        public MyWebChromeClient(Context context) {
+            super();
+            this.context = context;
+        }
+
+        @Override
+        public void onProgressChanged(WebView view, int newProgress) {
+            PAGE_LOAD_PROGRESS = newProgress;
+            //Log.i(TAG, "Page progress [" + PAGE_LOAD_PROGRESS + "%]");
+            super.onProgressChanged(view, newProgress);
+        }
+    }
+
+    public class ConnectionTimeoutHandler extends AsyncTask<Void, Void, String> {
+
+        private static final String PAGE_LOADED = "PAGE_LOADED";
+        private static final String CONNECTION_TIMEOUT = "CONNECTION_TIMEOUT";
+        private static final long CONNECTION_TIMEOUT_UNIT = 120000L; //1 minute
+
+        private Context mContext = null;
+        private WebView webView;
+        private Time startTime = new Time();
+        private Time currentTime = new Time();
+        private Boolean loaded = false;
+
+        public ConnectionTimeoutHandler(Context mContext, WebView webView) {
+            this.mContext = mContext;
+            this.webView = webView;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            this.startTime.setToNow();
+            MainActivity.PAGE_LOAD_PROGRESS = 0;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+
+            if (CONNECTION_TIMEOUT.equalsIgnoreCase(result)) {
+                showError(this.mContext, WebViewClient.ERROR_TIMEOUT);
+
+                this.webView.stopLoading();
+            } else if (PAGE_LOADED.equalsIgnoreCase(result)) {
+                //Toast.makeText(this.mContext, "Page load success", Toast.LENGTH_LONG).show();
+            } else {
+                //Handle unknown events here
+            }
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+
+            while (! loaded) {
+                currentTime.setToNow();
+                if (MainActivity.PAGE_LOAD_PROGRESS != 100
+                        && (currentTime.toMillis(true) - startTime.toMillis(true)) > CONNECTION_TIMEOUT_UNIT) {
+                    return CONNECTION_TIMEOUT;
+                } else if (MainActivity.PAGE_LOAD_PROGRESS == 100) {
+                    loaded = true;
+                }
+            }
+            return PAGE_LOADED;
+        }
+    }
+
+    private void showError(Context mContext, int errorCode) {
+        //Prepare message
+        String message = null;
+        String title = null;
+        if (errorCode == WebViewClient.ERROR_AUTHENTICATION) {
+            message = "User authentication failed on server";
+            title = "Auth Error";
+        } else if (errorCode == WebViewClient.ERROR_TIMEOUT) {
+            message = "The server is taking too much time to communicate. Try again later.";
+            title = "Connection Timeout";
+        } else if (errorCode == WebViewClient.ERROR_TOO_MANY_REQUESTS) {
+            message = "Too many requests during this load";
+            title = "Too Many Requests";
+        } else if (errorCode == WebViewClient.ERROR_UNKNOWN) {
+            message = "Generic error";
+            title = "Unknown Error";
+        } else if (errorCode == WebViewClient.ERROR_BAD_URL) {
+            message = "Check entered URL..";
+            title = "Malformed URL";
+        } else if (errorCode == WebViewClient.ERROR_CONNECT) {
+            message = "Failed to connect to the server";
+            title = "Connection";
+        } else if (errorCode == WebViewClient.ERROR_FAILED_SSL_HANDSHAKE) {
+            message = "Failed to perform SSL handshake";
+            title = "SSL Handshake Failed";
+        } else if (errorCode == WebViewClient.ERROR_HOST_LOOKUP) {
+            message = "Server or proxy hostname lookup failed";
+            title = "Host Lookup Error";
+        } else if (errorCode == WebViewClient.ERROR_PROXY_AUTHENTICATION) {
+            message = "User authentication failed on proxy";
+            title = "Proxy Auth Error";
+        } else if (errorCode == WebViewClient.ERROR_REDIRECT_LOOP) {
+            message = "Too many redirects";
+            title = "Redirect Loop Error";
+        } else if (errorCode == WebViewClient.ERROR_UNSUPPORTED_AUTH_SCHEME) {
+            message = "Unsupported authentication scheme (not basic or digest)";
+            title = "Auth Scheme Error";
+        } else if (errorCode == WebViewClient.ERROR_UNSUPPORTED_SCHEME) {
+            message = "Unsupported URI scheme";
+            title = "URI Scheme Error";
+        } else if (errorCode == WebViewClient.ERROR_FILE) {
+            message = "Generic file error";
+            title = "File";
+        } else if (errorCode == WebViewClient.ERROR_FILE_NOT_FOUND) {
+            message = "File not found";
+            title = "File";
+        } else if (errorCode == WebViewClient.ERROR_IO) {
+            message = "The server failed to communicate. Try again later.";
+            title = "IO Error";
+        }
+
+        if (message != null) {
+            new android.app.AlertDialog.Builder(mContext)
+                    .setMessage(message)
+                    .setTitle(title)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setCancelable(false)
+                    .setPositiveButton("OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    setResult(RESULT_CANCELED);
+                                    finish();
+                                }
+                            }).show();
         }
     }
 
@@ -137,9 +297,9 @@ public class MainActivity extends AppCompatActivity {
         alertDialogBuilder.setMessage("Yakin keluar dari aplikasi ?").setCancelable(false).setPositiveButton("Ya", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
 
-                view.loadUrl(s + "/logout");
+                //view.loadUrl(s + "/logout");
 
-                CookieSyncManager cookieSyncMngr = CookieSyncManager.createInstance(getApplicationContext());
+                CookieSyncManager.createInstance(getApplicationContext());
                 CookieManager cookieManager = CookieManager.getInstance();
                 if(Build.VERSION.SDK_INT >= 21) {
                     cookieManager.removeAllCookies(new ValueCallback<Boolean>() {
@@ -151,14 +311,10 @@ public class MainActivity extends AppCompatActivity {
                     cookieManager.flush();
                 }
                 else{
-                    cookieSyncMngr.startSync();
 
                     cookieManager.removeAllCookie();
                     cookieManager.removeSessionCookie();
 
-
-                    cookieSyncMngr.stopSync();
-                    cookieSyncMngr.sync();
                 }
                 cookieManager.setAcceptCookie(false);
 
@@ -171,7 +327,10 @@ public class MainActivity extends AppCompatActivity {
                 ws.setSavePassword(false); // Not needed for API level 18 or greater (deprecated)
 
 
-                System.exit(0);
+                finish();
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(1);
+
             }
         }).setNegativeButton("Tidak", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {

@@ -7,20 +7,19 @@
     android:layout_height="match_parent"
     android:background="@android:color/white"
     android:fitsSystemWindows="true"
-    tools:context=".MainActivity">
+    tools:context=".BrowserActivity">
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <WebView
-            android:id="@+id/view"
+            android:id="@+id/webView2"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
         </WebView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
     <ProgressBar
         android:id="@+id/progressBar"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
