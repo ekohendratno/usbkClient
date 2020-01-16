@@ -15,7 +15,7 @@
 
         <LinearLayout
             android:padding="@dimen/activity_vertical_margin"
-            android:background="#fff"
+            android:background="#703c4b59"
             android:gravity="center"
             android:orientation="vertical"
             android:layout_width="match_parent"
@@ -30,7 +30,7 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Title"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:textColor="#8dc9b7"
+                android:textColor="#0EF0A6"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/app_name"/>
@@ -39,7 +39,7 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:textColor="#ababab"
+                android:textColor="#f2f2f2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/app_name_desc"/>
