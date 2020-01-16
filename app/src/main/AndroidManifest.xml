@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="id.kopas.berkarya.usbkclient">
+    package="id.kopas.berkarya.usbkaclient">
 
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".Splash"
+            android:name="id.kopas.berkarya.usbkaclient.Splash"
             android:theme="@style/AppTheme.NoActionBarStatusBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,14 +24,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MasukActivity"
+            android:name="id.kopas.berkarya.usbkaclient.MasukActivity"
             android:theme="@style/AppTheme.NoActionBarStatusBar" />
         <activity
-            android:name=".MainActivity"
+            android:name="id.kopas.berkarya.usbkaclient.MainActivity"
             android:theme="@style/AppTheme.NoActionBarStatusBar" />
         <meta-data android:name="android.s192upport.VERSION" android:value="26.1.0" />
         <meta-data android:name="android.arch.lifecycle.VERSION" android:value="27.0.0-SNAPSHOT" />
-        <meta-data android:name="com.android.vending.derived.apk.id" android:value="1" />
     </application>
 
 </manifest>
