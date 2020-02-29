@@ -40,7 +40,7 @@ public class MasukActivity extends AppCompatActivity {
 
                 progressDialogModel.pdMenyiapkanDataLogin(MasukActivity.this);
 
-                if( alamat.getText().toString().equals("") ) {
+                if( alamat.getText().toString().equals("http://") ) {
                     Toast.makeText(getApplicationContext(),"URL kosong!",Toast.LENGTH_SHORT).show();
                 }else{
 

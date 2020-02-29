@@ -96,6 +96,7 @@
                             android:id="@+id/alamat"
                             android:inputType="text"
                             android:layout_marginTop="@dimen/activity_horizontal_margin"
+                            android:text="@string/url_server"
                             android:hint="Masukkan alamat test!"
                             android:background="#ffffff"
                             android:padding="@dimen/activity_horizontal_margin"
