@@ -1,11 +1,9 @@
 package id.kopas.berkarya.usbkaclient;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
+import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -17,6 +15,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.StrictMode;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.View;
@@ -30,6 +30,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -57,30 +61,33 @@ public class MainActivity extends AppCompatActivity {
         final WebView view = findViewById(R.id.view);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
 
-        cekKebutuhanApp();
+        //cekKebutuhanApp();
 
-        /**
-        Intent i = getIntent();
-        String alamat = i.getStringExtra("alamat");
-        if(!alamat.equals("")){
-            alamat_server = alamat;
-        }*/
+        if (android.os.Build.VERSION.SDK_INT > 9)
+        {
+            StrictMode.ThreadPolicy policy = new
+                    StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
 
         view.getSettings().setJavaScriptEnabled(true);
         view.getSettings().setUseWideViewPort(true);
         view.getSettings().setLoadWithOverviewMode(true);
-        //view.getSettings().setSupportZoom(true);
-        //view.getSettings().setBuiltInZoomControls(true);
-        //view.getSettings().setDisplayZoomControls(false);
+        view.getSettings().setSupportZoom(false);
+        view.getSettings().setBuiltInZoomControls(false);
+        view.getSettings().setDisplayZoomControls(false);
 
         view.getSettings().setLoadsImagesAutomatically(true);
         //view.clearCache(true);
+        view.clearCache(true);
+        view.clearHistory();
         view.setWebViewClient(new ExamWebView());
-        view.setWebChromeClient(new MyWebChromeClient(this));
+        //view.setWebChromeClient(new MyWebChromeClient(this));
         //view.setWebChromeClient(new WebChromeClient());
 
         view.loadUrl(alamat_server);
         swipeRefreshLayout = findViewById(R.id.swipe);
+        swipeRefreshLayout.setRefreshing(true);
         swipeRefreshLayout.setColorSchemeColors(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -89,11 +96,8 @@ public class MainActivity extends AppCompatActivity {
                     view.reload();
                     view.getSettings().setDomStorageEnabled(true);
                 } else {
-                    Toast.makeText(MainActivity.this, "Url tidak valid/offline", Toast.LENGTH_LONG).show();
-                    view.loadDataWithBaseURL(null, "<html><body><img width=\"100%\" height=\"100%\" src=\"file:///android_res/drawable/offline.png\"></body></html>", "text/html", "UTF-8", null);
-                    //progressDialogModel.hideProgressDialog();
-                    swipeRefreshLayout.setRefreshing(false);
                     Intent i = new Intent(getBaseContext(), OfflineActivity.class);
+                    i.putExtra("error", "Url tidak terhubung" );
                     startActivity(i);
                     finish();
                 }
@@ -107,6 +111,36 @@ public class MainActivity extends AppCompatActivity {
             bringApplicationToFront();
         }
     }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+
+        if (!hasFocus) {
+            windowCloseHandler.postDelayed(windowCloserRunnable, 250);
+        }
+    }
+
+    private void toggleRecents() {
+        Intent closeRecents = new Intent("com.android.systemui.recent.action.TOGGLE_RECENTS");
+        closeRecents.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+        ComponentName recents = new ComponentName("com.android.systemui", "com.android.systemui.recent.RecentsActivity");
+        closeRecents.setComponent(recents);
+        this.startActivity(closeRecents);
+    }
+
+    private Handler windowCloseHandler = new Handler();
+    private Runnable windowCloserRunnable = new Runnable() {
+        @Override
+        public void run() {
+            ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+            ComponentName cn = am.getRunningTasks(1).get(0).topActivity;
+
+            if (cn != null && cn.getClassName().equals("com.android.systemui.recent.RecentsActivity")) {
+                toggleRecents();
+            }
+        }
+    };
 
     private class ExamWebView extends WebViewClient {
         private ExamWebView() {
@@ -125,13 +159,9 @@ public class MainActivity extends AppCompatActivity {
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             if(isNetworkStatusAvialable (MainActivity.this)) {
                 view.loadUrl(url);
-                //progressDialogModel.pdMenyiapkanDataLogin(MainActivity.this);
             } else {
-                Toast.makeText(MainActivity.this, "Url tidak valid/offline", Toast.LENGTH_LONG).show();
-                view.loadDataWithBaseURL(null, "<html><body><img width=\"100%\" height=\"100%\" src=\"file:///android_res/drawable/offline.png\"></body></html>", "text/html", "UTF-8", null);
-                //progressDialogModel.hideProgressDialog();
-                swipeRefreshLayout.setRefreshing(false);
                 Intent i = new Intent(getBaseContext(), OfflineActivity.class);
+                i.putExtra("error", "Url tidak terhubung" );
                 startActivity(i);
                 finish();
             }
@@ -154,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
             progressBar.setVisibility(View.GONE);
 
             Intent i = new Intent(getBaseContext(), OfflineActivity.class);
-            i.putExtra("valid", "offline");
+            i.putExtra("error", description );
             startActivity(i);
             System.exit(0);
         }
@@ -363,8 +393,14 @@ public class MainActivity extends AppCompatActivity {
             timer.schedule(myTimerTask, 100, 100);
         }
         super.onPause();
+
+        ActivityManager activityManager = (ActivityManager) getApplicationContext()
+                .getSystemService(Context.ACTIVITY_SERVICE);
+
+        activityManager.moveTaskToFront(getTaskId(), 0);
     }
 
+    static int hitung = 0;
     private void bringApplicationToFront() {
         KeyguardManager myKeyManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (myKeyManager.inKeyguardRestrictedInputMode())
@@ -375,6 +411,56 @@ public class MainActivity extends AppCompatActivity {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         try {
             pendingIntent.send();
+
+
+            if(hitung > 20 ){
+
+                Thread timer = new Thread() {
+                    public void run() {
+                        try {
+                            sleep(320);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } finally {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    android.webkit.CookieManager cookieManager = CookieManager.getInstance();
+
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                        cookieManager.removeAllCookies(new ValueCallback<Boolean>() {
+                                            // a callback which is executed when the cookies have been removed
+                                            @Override
+                                            public void onReceiveValue(Boolean aBoolean) {
+                                                Log.d(TAG, "Cookie removed: " + aBoolean);
+                                            }
+                                        });
+                                    }
+                                    else cookieManager.removeAllCookie();
+
+                                    WebView webview = new WebView(getApplicationContext());
+                                    webview.clearCache(true);
+                                    webview.clearHistory();
+
+                                    WebSettings ws = webview.getSettings();
+                                    ws.setSaveFormData(false);
+                                    ws.setSavePassword(false);
+
+                                    finish();
+                                    android.os.Process.killProcess(android.os.Process.myPid());
+                                    System.exit(1);
+                                }
+                            });
+                        }
+                    }
+                };
+                timer.start();
+            }
+
+
+            hitung++;
+
+
         } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
         }

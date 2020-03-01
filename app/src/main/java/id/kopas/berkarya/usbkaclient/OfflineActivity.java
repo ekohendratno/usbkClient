@@ -1,20 +1,13 @@
 package id.kopas.berkarya.usbkaclient;
 
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Toast;
+import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
-import androidx.appcompat.widget.AppCompatEditText;
 
 public class OfflineActivity extends AppCompatActivity {
 
@@ -27,19 +20,34 @@ public class OfflineActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
 
 
-        AppCompatButton clickMasuk = findViewById(R.id.clickMasuk);
+        Intent i = getIntent();
+        String error = i.getStringExtra("error");
+
+        TextView logError = findViewById(R.id.logError);
+        logError.setText(error);
+
+
+        String versionName = BuildConfig.VERSION_NAME;
+
+        TextView tv_version = findViewById(R.id.tv_version);
+        tv_version.setText(versionName);
+
+        final AppCompatButton clickMasuk = findViewById(R.id.clickMasuk);
         clickMasuk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                progressDialogModel.pdMenyiapkanDataLogin(OfflineActivity.this);
+                clickMasuk.setBackgroundResource(R.color.colorTextSecondary);
+                clickMasuk.setEnabled(false);
+
+                //progressDialogModel.pdMenyiapkanDataLogin(OfflineActivity.this);
 
                 Intent intent = new Intent(getBaseContext(), MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
                 finish();
 
-                progressDialogModel.hideProgressDialog();
+               // progressDialogModel.hideProgressDialog();
             }
         });
 
