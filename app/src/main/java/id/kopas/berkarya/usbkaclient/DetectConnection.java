@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import java.lang.reflect.Method;
+
 /**
  * Created by robby on 21/11/17.
  */

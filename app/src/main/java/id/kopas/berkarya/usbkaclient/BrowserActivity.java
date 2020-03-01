@@ -11,7 +11,6 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -67,16 +66,6 @@ public class BrowserActivity extends AppCompatActivity {
         coordinatorLayout = findViewById(R.id.main_content);
 
         url = getResources().getString(R.string.url_server);
-
-        Intent i = getIntent();
-        String alamat = i.getStringExtra("alamat");
-        if(!alamat.equals("")){
-            url = alamat;
-        }
-
-        if (TextUtils.isEmpty(url)) {
-            finish();
-        }
 
         webView = (WebView) findViewById(R.id.webView2);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
